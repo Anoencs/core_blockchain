@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"projectx/crypto"
 	"projectx/types"
 	"testing"
@@ -15,6 +16,17 @@ func TestSignBlock(t *testing.T) {
 
 	assert.Nil(t, b.Sign(privKey))
 	assert.NotNil(t, b.Signature)
+}
+
+func TestBlockDecodeEncode(t *testing.T) {
+	block := randomBlock(t, 1, types.Hash{})
+	buf := &bytes.Buffer{}
+	assert.Nil(t, block.Encode(NewBlockEncoder(buf)))
+
+	bdecoded := new(Block)
+
+	assert.Nil(t, bdecoded.Decode(NewBlockDecoder(buf)))
+	assert.Equal(t, block, bdecoded)
 }
 
 func TestVerifyBlock(t *testing.T) {
@@ -42,7 +54,7 @@ func randomBlock(t *testing.T, height uint32, prevBlockHash types.Hash) *Block {
 		Timestamp:     time.Now().UnixNano(),
 	}
 
-	b, err := NewBlock(header, []Transaction{*tx})
+	b, err := NewBlock(header, []*Transaction{tx})
 	assert.Nil(t, err)
 	dataHash, err := CalculateDataHash(b.Transactions)
 	assert.Nil(t, err)

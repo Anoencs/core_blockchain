@@ -47,7 +47,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		opts.Logger = log.NewLogfmtLogger(os.Stderr)
 		opts.Logger = log.With(opts.Logger, "ID", opts.ID)
 	}
-	chain, err := core.NewBlockchain(genesisBlock())
+	chain, err := core.NewBlockchain(opts.Logger, genesisBlock())
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	s := &Server{
 		ServerOpts:  opts,
 		blockTime:   opts.BlockTime,
-		memPool:     NewTxPool(),
+		memPool:     NewTxPool(1000),
 		isValidator: opts.PrivateKey != nil,
 		rpcCh:       make(chan RPC),
 		quitCh:      make(chan struct{}, 1),
@@ -75,7 +75,7 @@ func genesisBlock() *core.Block {
 	header := &core.Header{
 		Version:   1,
 		Height:    0,
-		Timestamp: time.Now().UnixNano(),
+		Timestamp: 000000,
 		DataHash:  types.Hash{},
 	}
 	block, _ := core.NewBlock(header, nil)
@@ -83,9 +83,11 @@ func genesisBlock() *core.Block {
 }
 
 func (s *Server) ProcessMessage(msg *DecodedMessage) error {
-	switch t := msg.Data.(type) {
+	switch d := msg.Data.(type) {
 	case *core.Transaction:
-		return s.ProcessTransaction(t)
+		return s.ProcessTransaction(d)
+	case *core.Block:
+		return s.processBlock(d)
 	}
 	return nil
 }
@@ -131,36 +133,34 @@ func (s *Server) broadcast(payload []byte) error {
 	return nil
 }
 
-func (s *Server) broadcastTx(tx *core.Transaction) error {
-	buf := bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(&buf)); err != nil {
-		return err
-	}
-	msg := NewMessage(MessageTypeTx, buf.Bytes())
-	if err := s.broadcast(msg.Bytes()); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *Server) ProcessTransaction(tx *core.Transaction) error {
 	if err := tx.Verify(); err != nil {
 		return err
 	}
 
 	hash := tx.Hash(core.TxHasher{})
-	if s.memPool.Has(hash) {
+	if s.memPool.Contains(hash) {
 		return nil
 	}
 
 	tx.SetFirstSeen(time.Now().UnixNano())
 
-	s.Logger.Log("msg", "adding tx to the mempool",
-		"hash", hash,
-		"memlength", s.memPool.Len())
+	// s.Logger.Log("msg", "adding tx to the mempool",
+	// 	"hash", hash,
+	// 	"memlength", s.memPool.Len())
 
 	go s.broadcastTx(tx)
-	return s.memPool.Add(tx)
+	s.memPool.Add(tx)
+	return nil
+}
+
+func (s *Server) processBlock(b *core.Block) error {
+	if err := s.chain.AddBlock(b); err != nil {
+		return err
+	}
+
+	go s.broadcastBlock(b)
+	return nil
 }
 
 func (s *Server) InitTranport() {
@@ -180,7 +180,8 @@ func (s *Server) createNewBlock() error {
 		return err
 	}
 
-	newblock, err := core.NewBlockFromPrevHeader(prevHeader, nil)
+	txx := s.memPool.Pending()
+	newblock, err := core.NewBlockFromPrevHeader(prevHeader, txx)
 	if err != nil {
 		return err
 	}
@@ -192,5 +193,32 @@ func (s *Server) createNewBlock() error {
 	if err = s.chain.AddBlock(newblock); err != nil {
 		return err
 	}
+
+	s.memPool.ClearPending()
+
+	go s.broadcastBlock(newblock)
 	return nil
+}
+
+func (s *Server) broadcastTx(tx *core.Transaction) error {
+	buf := bytes.Buffer{}
+	if err := tx.Encode(core.NewGobTxEncoder(&buf)); err != nil {
+		return err
+	}
+	msg := NewMessage(MessageTypeTx, buf.Bytes())
+	if err := s.broadcast(msg.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) broadcastBlock(b *core.Block) error {
+	buf := &bytes.Buffer{}
+	if err := b.Encode(core.NewBlockEncoder(buf)); err != nil {
+		return err
+	}
+
+	msg := NewMessage(MessageTypeBlock, buf.Bytes())
+
+	return s.broadcast(msg.Bytes())
 }

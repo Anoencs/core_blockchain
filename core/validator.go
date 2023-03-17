@@ -23,7 +23,7 @@ func (v *BlockValidator) ValidateBlock(b *Block) error {
 	}
 	// check block height is too high
 	if b.Height != v.bc.Height()+1 {
-		return fmt.Errorf("block (%d) too high", b.Height)
+		return fmt.Errorf("block (%s) has heigh (%d) is too high => current height (%d)", b.Hash(BlockHasher{}), b.Height, v.bc.Height())
 	}
 
 	// check previous hash block is equal with

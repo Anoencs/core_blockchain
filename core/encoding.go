@@ -6,6 +6,10 @@ import (
 	"io"
 )
 
+func init() {
+	gob.Register(elliptic.P256())
+}
+
 type Encoder[T any] interface {
 	Encode(T) error
 }
@@ -43,6 +47,30 @@ func (d *GobTxDecoder) Decode(tx *Transaction) error {
 	return gob.NewDecoder(d.r).Decode(tx)
 }
 
-func init() {
-	gob.Register(elliptic.P256())
+type GobBlockEncoder struct {
+	w io.Writer
+}
+
+func NewBlockEncoder(w io.Writer) *GobBlockEncoder {
+	return &GobBlockEncoder{
+		w: w,
+	}
+}
+
+func (e *GobBlockEncoder) Encode(b *Block) error {
+	return gob.NewEncoder(e.w).Encode(b)
+}
+
+type GobBlockDecoder struct {
+	r io.Reader
+}
+
+func NewBlockDecoder(r io.Reader) *GobBlockDecoder {
+	return &GobBlockDecoder{
+		r: r,
+	}
+}
+
+func (d *GobBlockDecoder) Decode(b *Block) error {
+	return gob.NewDecoder(d.r).Decode(b)
 }
