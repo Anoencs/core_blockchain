@@ -1,30 +1,34 @@
 package core
 
-import "projectx/types"
+import (
+	"encoding/binary"
+	"projectx/types"
+)
 
 type Instruction byte
 
 var (
-	InstrPush  Instruction = 0x0a
-	InstrAdd   Instruction = 0x0b
-	InstrMinus Instruction = 0x0c
-	InstrMul   Instruction = 0x0d
-	InstrDiv   Instruction = 0x0e
+	InstrPushInt  Instruction = 0x0a
+	InstrPushByte Instruction = 0x0b
+	InstrAdd      Instruction = 0x0c
+	InstrMinus    Instruction = 0x0d
+	InstrPack     Instruction = 0x0e
+	InstrStore    Instruction = 0x0f
 )
 
 type VM struct {
-	data  []byte
-	ip    int //instruction pointer
-	stack *types.Stack[byte]
-	sp    int //stack pointer
+	data          []byte
+	ip            int //instruction pointer
+	stack         *types.Stack
+	contractState *State
 }
 
-func NewVM(data []byte) *VM {
+func NewVM(data []byte, contractState *State) *VM {
 	return &VM{
-		data:  data,
-		ip:    0,
-		stack: types.NewStack[byte](),
-		sp:    -1,
+		data:          data,
+		ip:            0,
+		stack:         types.NewStack(128),
+		contractState: contractState,
 	}
 }
 
@@ -48,45 +52,54 @@ func (vm *VM) Run() error {
 
 func (vm *VM) Exec(instr Instruction) error {
 	switch instr {
-	case InstrPush:
-		vm.stack.Push(vm.data[vm.ip-1])
+	case InstrPushInt:
+		vm.stack.Push(int(vm.data[vm.ip-1]))
+	case InstrPushByte:
+		vm.stack.Push(byte(vm.data[vm.ip-1]))
 	case InstrAdd:
-		n1 := vm.stack.Top()
-		vm.stack.Pop()
-		vm.sp--
-		n2 := vm.stack.Top()
-		vm.stack.Pop()
-		vm.sp--
-		vm.stack.Push(n1 + n2)
-		vm.sp++
+		a := vm.stack.Pop().(int)
+		b := vm.stack.Pop().(int)
+		c := a + b
+		vm.stack.Push(c)
 	case InstrMinus:
-		n1 := vm.stack.Top()
-		vm.stack.Pop()
-		vm.sp--
-		n2 := vm.stack.Top()
-		vm.stack.Pop()
-		vm.sp--
-		vm.stack.Push(n2 - n1)
-		vm.sp++
-	case InstrMul:
-		n1 := vm.stack.Top()
-		vm.stack.Pop()
-		vm.sp--
-		n2 := vm.stack.Top()
-		vm.stack.Pop()
-		vm.sp--
-		vm.stack.Push(n1 * n2)
-		vm.sp++
-	case InstrDiv:
-		n1 := vm.stack.Top()
-		vm.stack.Pop()
-		vm.sp--
-		n2 := vm.stack.Top()
-		vm.stack.Pop()
-		vm.sp--
-		vm.stack.Push(n2 / n1)
-		vm.sp++
+		a := vm.stack.Pop().(int)
+		b := vm.stack.Pop().(int)
+		c := a - b
+		vm.stack.Push(c)
+
+	case InstrPack:
+		n := vm.stack.Pop().(int)
+		b := make([]byte, n)
+
+		for i := 0; i < n; i++ {
+			b[i] = vm.stack.Pop().(byte)
+		}
+		vm.stack.Push(b)
+	case InstrStore:
+		var (
+			value           = vm.stack.Pop()
+			key             = vm.stack.Pop().([]byte)
+			serializedValue []byte
+		)
+		switch v := value.(type) {
+		case int:
+			serializedValue = serializeInt64(int64(v))
+		default:
+			panic("TODO: unknown type")
+		}
+		vm.contractState.Put(key, serializedValue)
 	}
 
 	return nil
+
+}
+
+func serializeInt64(value int64) []byte {
+	buf := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buf, uint64(value))
+	return buf
+}
+
+func deserializeInt64(b []byte) int64 {
+	return int64(binary.LittleEndian.Uint64(b))
 }

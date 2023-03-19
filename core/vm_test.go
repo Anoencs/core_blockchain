@@ -9,21 +9,33 @@ import (
 
 func TestVM(t *testing.T) {
 	data := []byte{0x01, 0x0a, 0x02, 0x0a, 0x9, 0x0a, 0x2, 0x0a}
-	vm := NewVM(data)
-	assert.Nil(t, vm.Run())
-	assert.Equal(t, vm.stack, types.NewStack[uint8](0x1, 0x2, 0x9, 0x2))
+	contractState := NewState()
+	vm := NewVM(data, contractState)
+	assert.Equal(t, vm.stack, types.NewStack(128))
 }
-
-func TestAdd(t *testing.T) {
-	data := []byte{0x01, 0x0a, 0x02, 0x0a, 0x0b}
-	vm := NewVM(data)
+func TestVM2(t *testing.T) {
+	data := []byte{0x4f, 0x0b, 0x4f, 0x0b, 0x46, 0x0b, 0x03, 0x0a, 0x0e, 0x02, 0x0a, 0x03, 0x0a, 0x0d, 0x0f}
+	contractState := NewState()
+	vm := NewVM(data, contractState)
 	assert.Nil(t, vm.Run())
-	assert.Equal(t, vm.stack.Top(), uint8(0x3))
+	// result := vm.stack.Pop().([]byte)
+	//fmt.Printf("%+v", vm.stack.Top())
+	//fmt.Printf("%+v\n", vm.stack.Get()...)
+	//fmt.Println(string(result))
+	//assert.Equal(t, "FOO", string(result))
+}
+func TestAdd(t *testing.T) {
+	data := []byte{0x01, 0x0a, 0x02, 0x0a, 0x0c}
+	contractState := NewState()
+	vm := NewVM(data, contractState)
+	assert.Nil(t, vm.Run())
+	assert.Equal(t, 0x3, vm.stack.Top())
 }
 
 func TestMinus(t *testing.T) {
-	data := []byte{0x02, 0x0a, 0x01, 0x0a, 0x0c}
-	vm := NewVM(data)
+	data := []byte{0x02, 0x0a, 0x03, 0x0a, 0x0d}
+	contractState := NewState()
+	vm := NewVM(data, contractState)
 	assert.Nil(t, vm.Run())
-	assert.Equal(t, vm.stack.Top(), uint8(0x1))
+	assert.Equal(t, 0x1, vm.stack.Top())
 }

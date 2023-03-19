@@ -1,63 +1,44 @@
 package types
 
-import "fmt"
-
 var STACK_SIZE = 1024
 
-type Stack[T any] struct {
-	data []T
-	size int
-	cap  int
+type Stack struct {
+	data []any
+	sp   int
 }
 
-func NewStack[T any](data ...T) *Stack[T] {
-	if data == nil {
-		return &Stack[T]{
-			data: data,
-			size: 0,
-			cap:  STACK_SIZE,
-		}
-	}
-	return &Stack[T]{
-		data: data,
-		size: len(data),
-		cap:  STACK_SIZE,
+func NewStack(size int) *Stack {
+	return &Stack{
+		data: make([]any, size),
+		sp:   0,
 	}
 }
 
-func (s *Stack[T]) Top() T {
-	if s.IsEmpty() {
-		err := fmt.Errorf("stack underflow")
-		panic(err)
-	}
-
-	return s.data[s.size-1]
+func (s *Stack) Top() any {
+	return s.data[0]
 }
 
-func (s *Stack[T]) Pop() {
-	if s.IsEmpty() {
-		err := fmt.Errorf("stack underflow")
-		panic(err)
-	}
-	s.data = s.data[:s.size-1]
-	s.size--
+func (s *Stack) Pop() any {
+	value := s.data[s.sp-1]
+	s.data = append(s.data[:s.sp-1], s.data[s.sp+1:]...)
+	s.sp--
+	return value
 }
 
-func (s *Stack[T]) Push(v T) {
-	if s.size == s.cap {
-		err := fmt.Errorf("stack overflow")
-		panic(err)
-	}
-
-	s.data = append(s.data, v)
-	s.size++
+func (s *Stack) Get() []any {
+	return s.data
 }
 
-func (s *Stack[T]) IsEmpty() bool {
-	return s.size <= 0
+func (s *Stack) Push(v any) {
+	s.data[s.sp] = v
+	s.sp++
 }
 
-func (s *Stack[T]) Clear() {
-	s.size = 0
-	s.data = []T{}
+func (s *Stack) IsEmpty() bool {
+	return s.sp <= 0
+}
+
+func (s *Stack) Clear() {
+	s.sp = 0
+	s.data = []any{}
 }
