@@ -18,11 +18,13 @@ func main() {
 	trRemoteB := network.NewLocalTransport("REMOTE_B")
 	trRemoteC := network.NewLocalTransport("REMOTE_C")
 
+	// Local <-> A -> B -> C
 	trLocal.Connect(trRemoteA)
 	trRemoteA.Connect(trRemoteB)
 	trRemoteB.Connect(trRemoteC)
 	trRemoteA.Connect(trLocal)
 
+	// Local is validator and have privateKey -> A,B,C is normal node
 	initRemoteServers([]network.Transport{trRemoteA, trRemoteB, trRemoteC})
 
 	go func() {
@@ -74,8 +76,7 @@ func makeServer(id string, tr network.Transport, pk *crypto.PrivateKey) *network
 
 func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privKey := crypto.GeneratePrivateKey()
-	data := []byte{0x01, 0x0a, 0x02, 0x0a, 0x0b}
-	tx := core.NewTransaction(data)
+	tx := core.NewTransaction(contract())
 	tx.Sign(privKey)
 	buf := &bytes.Buffer{}
 	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
@@ -85,4 +86,13 @@ func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	msg := network.NewMessage(network.MessageTypeTx, buf.Bytes())
 
 	return tr.SendMessage(to, msg.Bytes())
+}
+
+// FOO 5 - > FOO =5 -> FOO = 5
+func contract() []byte {
+	data := []byte{0x02, 0x0a, 0x03, 0x0a, 0x0c, 0x4f, 0x0b, 0x4f, 0x0b, 0x46, 0x0b, 0x03, 0x0a, 0x0e, 0x0f}
+	pushFoo := []byte{0x4f, 0x0b, 0x4f, 0x0b, 0x46, 0x0b, 0x03, 0x0a, 0x0e, 0x001}
+
+	data = append(data, pushFoo...)
+	return data
 }

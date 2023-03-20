@@ -14,6 +14,7 @@ var (
 	InstrMinus    Instruction = 0x0d
 	InstrPack     Instruction = 0x0e
 	InstrStore    Instruction = 0x0f
+	InstrGet      Instruction = 0x001
 )
 
 type VM struct {
@@ -52,6 +53,13 @@ func (vm *VM) Run() error {
 
 func (vm *VM) Exec(instr Instruction) error {
 	switch instr {
+	case InstrGet:
+		key := vm.stack.Pop().([]byte)
+		value, err := vm.contractState.Get(key)
+		if err != nil {
+			return err
+		}
+		vm.stack.Push(value)
 	case InstrPushInt:
 		vm.stack.Push(int(vm.data[vm.ip-1]))
 	case InstrPushByte:
@@ -77,8 +85,8 @@ func (vm *VM) Exec(instr Instruction) error {
 		vm.stack.Push(b)
 	case InstrStore:
 		var (
-			value           = vm.stack.Pop()
 			key             = vm.stack.Pop().([]byte)
+			value           = vm.stack.Pop()
 			serializedValue []byte
 		)
 		switch v := value.(type) {

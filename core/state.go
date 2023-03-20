@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 type State struct {
 	data map[string][]byte
 }
@@ -20,6 +22,10 @@ func (s *State) Delete(k []byte) error {
 	return nil
 }
 
-func (s *State) Get(k []byte) []byte {
-	return s.data[string(k)]
+func (s *State) Get(k []byte) ([]byte, error) {
+	value, ok := s.data[string(k)]
+	if !ok {
+		return nil, fmt.Errorf("key map invalid")
+	}
+	return value, nil
 }
