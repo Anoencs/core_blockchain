@@ -17,7 +17,8 @@ func main() {
 	trRemoteA := network.NewLocalTransport("REMOTE_A")
 	trRemoteB := network.NewLocalTransport("REMOTE_B")
 	trRemoteC := network.NewLocalTransport("REMOTE_C")
-
+	trRemoteD := network.NewLocalTransport("REMOTE_D")
+	fmt.Println(trRemoteD)
 	// Local <-> A -> B -> C
 	trLocal.Connect(trRemoteA)
 	trRemoteA.Connect(trRemoteB)

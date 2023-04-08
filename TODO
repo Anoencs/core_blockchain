@@ -1,7 +1,15 @@
-Sync block data from another node 
-TCP transport to connect global
+tranport rpc
+
+block
+blockchain
+tx 
+mempool
 
 
-Flutter demo trên mobile,
+APIII
+1. Create Tx
+2. Add new Tx to mempool
+3. Get Tx chain
 
-kịch bản lấy thông tin người dùng từ QR code
+
+

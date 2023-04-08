@@ -9,3 +9,4 @@ type Transport interface {
 	Addr() NetAddr
 	Broadcast([]byte) error
 }
+
