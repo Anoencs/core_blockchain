@@ -1,9 +1,30 @@
-package api
+package apigin
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+	"projectx/biz"
+	"projectx/core"
+	"projectx/model"
 
-func handleCreateTx() gin.HandlerFunc {
+	"github.com/gin-gonic/gin"
+)
+
+func CreateTxHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var data model.TransactionCreate
+		if err := c.ShouldBind(&data); err != nil {
+			c.JSON(http.StatusBadRequest, err)
+			return
+		}
+
+		storage := core.NewMemoryStorage()
+		biz := biz.NewCreateTxBiz(storage)
+
+		if err := biz.CreateTx(&data); err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, "ok")
 
 	}
 }

@@ -85,5 +85,5 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 		"height", b.Height,
 		"transactions", len(b.Transactions),
 	)
-	return bc.store.Put(b)
+	return bc.store.PutBlock(b)
 }
