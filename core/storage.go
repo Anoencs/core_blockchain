@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"projectx/model"
 )
@@ -22,6 +23,11 @@ func (s *MemoryStore) PutBlock(*Block) error {
 
 func (s *MemoryStore) PutTx(data *model.TransactionCreate) error {
 	new_Tx := NewTransaction([]byte(data.Data))
-	fmt.Printf("Import new transaction: %+v", new_Tx)
+	buf := &bytes.Buffer{}
+	new_Tx.Encode(NewGobTxEncoder(buf))
+	fmt.Printf("Import new transaction with encoding: %+v\n", buf.Bytes())
+	txDecoded := new(Transaction)
+	txDecoded.Decode(NewGobTxDecoder(buf))
+	fmt.Printf("Import new transaction: %+v", txDecoded)
 	return nil
 }
