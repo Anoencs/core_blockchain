@@ -13,6 +13,19 @@ import (
 )
 
 func main() {
+	router := gin.Default()
+	// router.Use(middleware.Recover())
+	// appCtx := component.NewAppCtx(db)
+
+	v1 := router.Group("/v1")
+	{
+		tx := v1.Group("/tx")
+		{
+			tx.POST("", apigin.CreateTxHandler())
+		}
+	}
+	router.Run(":9001")
+
 	// trLocal := network.NewLocalTransport("LOCAL")
 	// trRemoteA := network.NewLocalTransport("REMOTE_A")
 	// trRemoteB := network.NewLocalTransport("REMOTE_B")
@@ -51,18 +64,6 @@ func main() {
 	// localServer := makeServer("LOCAL", trLocal, &privKey)
 	// localServer.Start()
 
-	router := gin.Default()
-	// router.Use(middleware.Recover())
-	// appCtx := component.NewAppCtx(db)
-
-	v1 := router.Group("/v1")
-	{
-		tx := v1.Group("/tx")
-		{
-			tx.POST("", apigin.CreateTxHandler())
-		}
-	}
-	router.Run(":9001")
 }
 
 func initRemoteServers(trs []network.Transport) {

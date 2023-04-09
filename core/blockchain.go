@@ -17,14 +17,15 @@ type Blockchain struct {
 }
 
 func NewBlockchain(logger log.Logger, genesis *Block) (*Blockchain, error) {
+	store, err := NewMemoryStorage()
 	bc := &Blockchain{
 		headers:       []*Header{},
-		store:         NewMemoryStorage(),
+		store:         store,
 		Logger:        logger,
 		contractState: NewState(),
 	}
 	bc.validator = NewBlockValidator(bc)
-	err := bc.addBlockWithoutValidation(genesis)
+	err = bc.addBlockWithoutValidation(genesis)
 
 	return bc, err
 }

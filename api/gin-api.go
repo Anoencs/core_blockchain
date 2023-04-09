@@ -17,7 +17,10 @@ func CreateTxHandler() gin.HandlerFunc {
 			return
 		}
 
-		storage := core.NewMemoryStorage()
+		storage, err := core.NewMemoryStorage()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+		}
 		biz := biz.NewCreateTxBiz(storage)
 
 		if err := biz.CreateTx(&data); err != nil {
