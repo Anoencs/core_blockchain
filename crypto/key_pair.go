@@ -13,6 +13,16 @@ type PrivateKey struct {
 	key *ecdsa.PrivateKey
 }
 
+func (k PrivateKey) Get() *ecdsa.PrivateKey {
+	return k.key
+}
+
+func NewPrivKeyFromKey(key *ecdsa.PrivateKey) *PrivateKey {
+	return &PrivateKey{
+		key: key,
+	}
+}
+
 func (k PrivateKey) Sign(data []byte) (*Signature, error) {
 	r, s, err := ecdsa.Sign(rand.Reader, k.key, data)
 	if err != nil {

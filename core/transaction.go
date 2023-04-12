@@ -10,7 +10,6 @@ type Transaction struct {
 	Data      []byte
 	From      crypto.PublicKey
 	Signature *crypto.Signature
-
 	// cached version of the tx data hash
 	hash types.Hash
 	// firstSeen is the timestamp of when this tx is first seen locally

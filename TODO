@@ -12,4 +12,34 @@ APIII
 3. Get Tx chain
 
 
+A -> B  1Tx
+A -> E  5Tx
 
+
+Data + PriKey_A -> R,S + PubKey_A -> xac thuc A da ky vao Data
+
+//handshake
+1. Gen pubkey,prikey 
+2. Gui BE pubkey 
+3. BE -> gen pubkey2,prikey2 
+4. pubkey2 -> Fe 
+5. FE gui BE privateKey cua doanh nghiep 
+
+A -> B
+A pubkeyB encode -> B 
+
+doanh nghiep A,B,C,D 
+Vinamilk (A)
+1.Trang trai -> nha dong goi 
+2. nha dong goi -> dong thung
+Nam trong Tx
+Data: 
+nha phan phoi: Vinamilk
+1.Trang trai -> nha dong goi 
+2.nha dong goi -> dong thung
+3.nha ban le:  xxx
+
+role
+customer
+nha ban le 
+doanh nghiep
