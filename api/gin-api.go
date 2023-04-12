@@ -1,6 +1,8 @@
 package apigin
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"projectx/biz"
 	"projectx/core"
@@ -18,6 +20,7 @@ func CreateTxHandler() gin.HandlerFunc {
 		}
 
 		storage, err := core.NewMemoryStorage()
+		defer storage.Close()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
 		}
@@ -28,6 +31,41 @@ func CreateTxHandler() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, "ok")
+
+	}
+}
+
+func GetTxHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		hash := c.Query("hash")
+		storage, err := core.NewMemoryStorage()
+		defer storage.Close()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+		}
+
+		biz := biz.NewGetTxBiz(storage)
+		tx, err := biz.GetTx([]byte(hash))
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err)
+		}
+		buf := bytes.NewBuffer(tx)
+
+		decodedTx := core.Transaction{}
+		decodedTx.Decode(core.NewGobTxDecoder(buf))
+
+		dataTx := model.TransactionCreate{}
+		err = json.Unmarshal(decodedTx.Data, &dataTx)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+		}
+
+		responseTx := model.TransactionResponse{}
+		responseTx.Provider = dataTx.Provider
+		responseTx.Track = dataTx.Track
+		responseTx.Signature = decodedTx.Signature
+		c.JSON(http.StatusOK, responseTx)
 
 	}
 }

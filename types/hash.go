@@ -17,6 +17,10 @@ func (h Hash) IsZero() bool {
 	return true
 }
 
+func (h Hash) ToString() string {
+	return hex.EncodeToString(h[:])
+}
+
 func (h Hash) ToSlice() []byte {
 	b := make([]byte, 32)
 	for i := 0; i < 32; i++ {
@@ -26,7 +30,7 @@ func (h Hash) ToSlice() []byte {
 }
 
 func (h Hash) String() string {
-	return hex.EncodeToString(h.ToSlice())
+	return hex.EncodeToString(h[:])
 }
 
 func HashFromBytes(b []byte) Hash {
